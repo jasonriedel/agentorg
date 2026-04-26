@@ -13,7 +13,7 @@ from ...database import AsyncSessionLocal, get_db
 from ...models.run import Run
 from ...models.workflow import Workflow
 from ...schemas.run import RunResponse
-from ...schemas.workflow import TriggerWorkflowRequest, WorkflowResponse
+from ...schemas.workflow import TriggerWorkflowRequest, WorkflowDetailResponse, WorkflowResponse
 from ...tools.context_tools import GET_CONTEXT, SET_CONTEXT
 from ...tools.file_tools import LIST_FILES, READ_FILE, WRITE_FILE
 from ...tools.github_tools import COMMIT_FILES, CREATE_BRANCH, CREATE_PR
@@ -41,7 +41,7 @@ async def list_workflows(db: AsyncSession = Depends(get_db)):
     return result.scalars().all()
 
 
-@router.get("/{workflow_id}", response_model=WorkflowResponse)
+@router.get("/{workflow_id}", response_model=WorkflowDetailResponse)
 async def get_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Workflow).where((Workflow.slug == workflow_id) | (Workflow.id == workflow_id))

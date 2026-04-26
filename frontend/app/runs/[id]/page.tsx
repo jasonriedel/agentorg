@@ -2,7 +2,8 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { EventLog } from "@/app/components/EventLog";
 import { GateApproval } from "@/app/components/GateApproval";
-import type { Task } from "@/lib/types";
+import { WorkflowDAG } from "@/app/components/WorkflowDAG";
+import type { Task, WorkflowDetail } from "@/lib/types";
 
 const TASK_STATUS_COLORS: Record<string, string> = {
   pending: "text-zinc-500",
@@ -42,6 +43,16 @@ export default async function RunDetailPage({ params }: PageProps<"/runs/[id]">)
     api.runs.tasks(id),
     api.runs.gates(id).catch(() => []),
   ]);
+
+  let workflowDetail: WorkflowDetail | null = null;
+  try {
+    workflowDetail = await api.workflows.get(run.workflow_slug);
+  } catch {
+    // workflow detail is optional for the DAG
+  }
+
+  const taskStatusMap: Record<string, string> = {};
+  tasks.forEach((t) => { taskStatusMap[t.name] = t.status; });
 
   const pendingGates = gates.filter((g) => g.status === "waiting");
 
@@ -89,6 +100,19 @@ export default async function RunDetailPage({ params }: PageProps<"/runs/[id]">)
       {run.error && (
         <div className="border border-red-800 bg-red-950/20 rounded p-3 text-sm text-red-300">
           {run.error}
+        </div>
+      )}
+
+      {/* Workflow DAG with live status */}
+      {workflowDetail && workflowDetail.definition.tasks.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-white mb-3">Execution Graph</h2>
+          <WorkflowDAG
+            tasks={workflowDetail.definition.tasks}
+            phases={workflowDetail.definition.phases}
+            taskStatuses={taskStatusMap}
+            height={320}
+          />
         </div>
       )}
 

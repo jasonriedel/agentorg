@@ -15,3 +15,8 @@ class WorkflowResponse(BaseModel):
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+
+class WorkflowDetailResponse(WorkflowResponse):
+    definition: dict
+    definition_yaml: str

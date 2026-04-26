@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 
-import frontmatter
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
@@ -16,8 +15,10 @@ from .api.v1 import workflows as workflows_router
 from .api.v1 import runs as runs_router
 from .api.v1 import gates as gates_router
 from .api.v1 import agents as agents_router
+from .api.v1 import webhooks as webhooks_router
 from .api.ws import events as ws_events_router
 from .services.soul_sync_service import get_soul_sync_service
+from .services.trigger_service import get_trigger_service
 
 
 @asynccontextmanager
@@ -31,9 +32,14 @@ async def lifespan(app: FastAPI):
     sync_service = get_soul_sync_service()
     await sync_service.start()
 
+    trigger_svc = get_trigger_service()
+    trigger_svc.start()
+    await trigger_svc.load_cron_schedules()
+
     yield
 
     await sync_service.stop()
+    trigger_svc.stop()
 
 
 async def _seed_workflows() -> None:
@@ -102,6 +108,7 @@ app.include_router(workflows_router.router, prefix="/api/v1")
 app.include_router(runs_router.router, prefix="/api/v1")
 app.include_router(gates_router.router, prefix="/api/v1")
 app.include_router(agents_router.router, prefix="/api/v1")
+app.include_router(webhooks_router.router)  # no prefix — /webhooks/github
 app.include_router(ws_events_router.router)  # WebSocket — no prefix
 
 

@@ -1,4 +1,4 @@
-import type { Agent, Gate, Run, RunEvent, SoulVersion, Task, Workflow } from "./types";
+import type { Agent, Gate, Run, RunEvent, SoulVersion, Task, Workflow, WorkflowDetail } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -21,6 +21,7 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
 export const api = {
   workflows: {
     list: () => get<Workflow[]>("/api/v1/workflows/"),
+    get: (id: string) => get<WorkflowDetail>(`/api/v1/workflows/${id}`),
     trigger: (id: string, inputs: Record<string, string>) =>
       post<Run>(`/api/v1/workflows/${id}/trigger`, { inputs }),
   },

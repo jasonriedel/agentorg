@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     souls_dir: str = "../souls"
     workflows_dir: str = "../workflows"
     default_model: str = "claude-sonnet-4-6"
+    github_webhook_secret: str = ""  # optional; if set, validates HMAC-SHA256 signatures
 
 
 settings = Settings()

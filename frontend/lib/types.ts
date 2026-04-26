@@ -20,12 +20,26 @@ export interface SoulVersion {
 }
 export type TaskStatus = "pending" | "running" | "completed" | "failed" | "skipped";
 
+export interface WorkflowTask {
+  id: string;
+  name: string;
+  phase: string;
+  agent: string;
+  depends_on: string[];
+  task_type: string;
+}
+
 export interface Workflow {
   id: string;
   slug: string;
   name: string;
   description: string | null;
   is_active: boolean;
+}
+
+export interface WorkflowDetail extends Workflow {
+  definition: { phases: string[]; tasks: WorkflowTask[] };
+  definition_yaml: string;
 }
 
 export interface Run {
