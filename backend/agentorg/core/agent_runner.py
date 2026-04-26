@@ -24,6 +24,7 @@ class RunContext:
 class TaskToolContext:
     task_id: str
     run_context: RunContext
+    agent_slug: str = ""
 
 
 @dataclass
@@ -63,7 +64,7 @@ class AgentRunner:
         ]
         tools = self.tool_registry.get_tools_for_agent(agent_soul.capabilities)
         messages = [{"role": "user", "content": self._build_message(task_name, task_description, run_context, task_inputs)}]
-        tool_context = TaskToolContext(task_id=task_id, run_context=run_context)
+        tool_context = TaskToolContext(task_id=task_id, run_context=run_context, agent_slug=agent_soul.slug)
 
         all_tool_calls: list[dict] = []
         total_input_tokens = 0

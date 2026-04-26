@@ -1,4 +1,23 @@
 export type RunStatus = "pending" | "running" | "waiting_human" | "completed" | "failed" | "cancelled";
+
+export interface Agent {
+  id: string;
+  slug: string;
+  name: string;
+  current_soul_version: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SoulVersion {
+  id: string;
+  version: string;
+  soul_md: string;
+  commit_sha: string | null;
+  pr_url: string | null;
+  is_active: boolean;
+  created_at: string;
+}
 export type TaskStatus = "pending" | "running" | "completed" | "failed" | "skipped";
 
 export interface Workflow {

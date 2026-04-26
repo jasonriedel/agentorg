@@ -1,0 +1,41 @@
+version: "1.0"
+id: "soul-improvement"
+name: "Soul Self-Improvement"
+description: "Agent reflects on its recent run and proposes soul improvements via PR"
+
+phases:
+  - reflect
+
+inputs:
+  agent_slug:
+    type: string
+    required: true
+  run_id:
+    type: string
+    required: true
+
+guardrails:
+  max_cost_usd: 1.00
+  max_tokens: 50000
+
+tasks:
+  - id: reflect
+    name: "Reflect and Propose Soul Update"
+    phase: reflect
+    agent: "{{inputs.agent_slug}}"
+    depends_on: []
+    description: |
+      Review your own soul file and reflect on your recent performance.
+      Use get_soul_content to read your current soul, then propose improvements
+      to the Markdown body by calling propose_soul_update.
+
+      Focus on:
+      - Lessons from tasks you found difficult or handled suboptimally
+      - New rules or patterns that would make you more effective
+      - Clearer instructions for edge cases you encountered
+      - Removing instructions that turned out to be counterproductive
+
+      Your proposed changes must only modify the Markdown body — not the YAML
+      frontmatter. When done, report what you proposed and why.
+
+      OUTPUT soul_pr_url: <the PR URL from propose_soul_update, or "no changes">

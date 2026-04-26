@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 
+import frontmatter
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
@@ -9,11 +10,14 @@ from sqlalchemy import select
 from .config import settings
 from .database import AsyncSessionLocal, Base, engine
 from .models import Agent, Artifact, Gate, Run, RunEvent, RunStatus, SoulVersion, Task, TaskStatus, Workflow
+from .core.soul_manager import SoulManager
 from .core.workflow_parser import parse_workflow
 from .api.v1 import workflows as workflows_router
 from .api.v1 import runs as runs_router
 from .api.v1 import gates as gates_router
+from .api.v1 import agents as agents_router
 from .api.ws import events as ws_events_router
+from .services.soul_sync_service import get_soul_sync_service
 
 
 @asynccontextmanager
@@ -22,8 +26,14 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
 
     await _seed_workflows()
+    await _seed_agents()
+
+    sync_service = get_soul_sync_service()
+    await sync_service.start()
 
     yield
+
+    await sync_service.stop()
 
 
 async def _seed_workflows() -> None:
@@ -51,7 +61,35 @@ async def _seed_workflows() -> None:
         await db.commit()
 
 
-app = FastAPI(title="AgentOrg", version="0.2.0", lifespan=lifespan)
+async def _seed_agents() -> None:
+    """Register agents from souls directory, seeding DB records and initial SoulVersions."""
+    soul_manager = SoulManager(settings.souls_dir)
+    slugs = soul_manager.list_slugs()
+
+    async with AsyncSessionLocal() as db:
+        for slug in sorted(slugs):
+            try:
+                soul = soul_manager.load(slug)
+                existing = (await db.execute(select(Agent).where(Agent.slug == slug))).scalar_one_or_none()
+                if not existing:
+                    agent = Agent(slug=slug, name=soul.name, current_soul_version=soul.version)
+                    db.add(agent)
+                    await db.flush()
+
+                    sv = SoulVersion(
+                        agent_id=agent.id,
+                        version=soul.version,
+                        soul_md=soul.raw_md,
+                        is_active=True,
+                    )
+                    db.add(sv)
+                    print(f"[seed] agent: {slug} v{soul.version}")
+            except Exception as e:
+                print(f"[seed] agent skipped {slug}: {e}")
+        await db.commit()
+
+
+app = FastAPI(title="AgentOrg", version="0.3.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,9 +101,10 @@ app.add_middleware(
 app.include_router(workflows_router.router, prefix="/api/v1")
 app.include_router(runs_router.router, prefix="/api/v1")
 app.include_router(gates_router.router, prefix="/api/v1")
+app.include_router(agents_router.router, prefix="/api/v1")
 app.include_router(ws_events_router.router)  # WebSocket — no prefix
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.2.0"}
+    return {"status": "ok", "version": "0.3.0"}

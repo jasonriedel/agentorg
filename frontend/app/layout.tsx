@@ -15,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="font-bold text-white tracking-tight">AgentOrg</span>
           <Link href="/runs" className="text-zinc-400 hover:text-white text-sm transition-colors">Runs</Link>
           <Link href="/workflows" className="text-zinc-400 hover:text-white text-sm transition-colors">Workflows</Link>
+          <Link href="/agents" className="text-zinc-400 hover:text-white text-sm transition-colors">Agents</Link>
         </nav>
         <main className="px-6 py-6 max-w-6xl mx-auto">{children}</main>
       </body>

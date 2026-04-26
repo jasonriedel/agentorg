@@ -12,6 +12,8 @@ capabilities:
   - create_branch
   - commit_files
   - create_pr
+  - get_soul_content
+  - propose_soul_update
 self_improvement:
   enabled: true
   allowed_fields: [instructions, memory_patterns]

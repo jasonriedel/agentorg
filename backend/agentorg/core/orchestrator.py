@@ -1,4 +1,5 @@
 import asyncio
+import re
 from datetime import datetime
 
 from sqlalchemy import select
@@ -72,6 +73,10 @@ class Orchestrator:
                 payload={"cost_usd": run.cost_usd, "token_count": run.token_count},
             ))
             print(f"\n[orchestrator] completed — ${run.cost_usd:.4f}")
+
+            # Auto-trigger soul improvement for eligible agents
+            if workflow_def.id != "soul-improvement":
+                await self._trigger_soul_improvements(workflow_def, run)
 
         except CostLimitExceeded as e:
             run.status = RunStatus.failed
@@ -167,6 +172,72 @@ class Orchestrator:
             return await self._run_gate(task_def, run, run_context, bus, db)
         return await self._run_agent_task(task_def, run, run_context, task_outputs, bus)
 
+    def _resolve_agent(self, agent_field: str, run_context: RunContext) -> str:
+        """Resolve {{inputs.key}} template in the agent field."""
+        if agent_field.startswith("{{") and agent_field.endswith("}}"):
+            ref = agent_field[2:-2].strip()
+            if ref.startswith("inputs."):
+                return run_context.inputs.get(ref[7:], agent_field)
+        return agent_field
+
+    async def _trigger_soul_improvements(self, workflow_def: WorkflowDef, run: Run) -> None:
+        """Fire soul-improvement sub-runs for agents that opt in."""
+        from ..core.workflow_parser import parse_workflow
+        from ..config import settings
+        from pathlib import Path
+
+        soul_workflow_path = Path(settings.workflows_dir) / "soul_improvement.yaml"
+        if not soul_workflow_path.exists():
+            return
+
+        # Collect unique agent slugs from this workflow's tasks
+        agent_slugs = {
+            t.agent for t in workflow_def.tasks
+            if t.task_type == "agent" and t.agent and not t.agent.startswith("{{")
+        }
+
+        for slug in agent_slugs:
+            try:
+                soul = self.soul_manager.load(slug)
+            except FileNotFoundError:
+                continue
+
+            if not soul.self_improvement.get("enabled"):
+                continue
+
+            soul_workflow_def = parse_workflow(soul_workflow_path)
+            async with AsyncSessionLocal() as sub_db:
+                from ..models.run import Run as RunModel
+                from ..models.workflow import Workflow
+                wf_row = (await sub_db.execute(
+                    select(Workflow).where(Workflow.slug == "soul-improvement")
+                )).scalar_one_or_none()
+                if not wf_row:
+                    continue
+
+                sub_run = RunModel(
+                    workflow_id=wf_row.id,
+                    workflow_slug="soul-improvement",
+                    trigger="auto",
+                    trigger_payload={"inputs": {"agent_slug": slug, "run_id": run.id}},
+                )
+                sub_db.add(sub_run)
+                await sub_db.commit()
+                await sub_db.refresh(sub_run)
+
+            print(f"\n[orchestrator] triggering soul-improvement for '{slug}' (run={sub_run.id[:8]})")
+            asyncio.create_task(self._run_soul_improvement(sub_run.id, soul_workflow_def))
+
+    async def _run_soul_improvement(self, run_id: str, workflow_def: WorkflowDef) -> None:
+        async with AsyncSessionLocal() as db:
+            run = (await db.execute(
+                select(Run).where(Run.id == run_id)
+            )).scalar_one()
+            try:
+                await self.execute_run(run, workflow_def, db)
+            except Exception as e:
+                print(f"[orchestrator] soul-improvement run {run_id[:8]} failed: {e}")
+
     async def _run_agent_task(
         self,
         task_def: TaskDef,
@@ -175,10 +246,11 @@ class Orchestrator:
         task_outputs: dict[str, dict],
         bus: EventBus,
     ) -> TaskResult:
+        agent_slug = self._resolve_agent(task_def.agent, run_context)
         async with AsyncSessionLocal() as db:
             db_task = Task(
                 run_id=run.id,
-                agent_slug=task_def.agent,
+                agent_slug=agent_slug,
                 name=task_def.name,
                 phase=task_def.phase,
                 depends_on=task_def.depends_on,
@@ -197,11 +269,11 @@ class Orchestrator:
                 run_id=run.id,
                 task_id=db_task.id,
                 event_type="task_started",
-                payload={"task": task_def.name, "agent": task_def.agent},
+                payload={"task": task_def.name, "agent": agent_slug},
             ))
 
             try:
-                soul = self.soul_manager.load(task_def.agent)
+                soul = self.soul_manager.load(agent_slug)
                 result = await self.agent_runner.run_task(
                     task_id=db_task.id,
                     task_name=task_def.name,

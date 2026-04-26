@@ -17,6 +17,7 @@ from ...schemas.workflow import TriggerWorkflowRequest, WorkflowResponse
 from ...tools.context_tools import GET_CONTEXT, SET_CONTEXT
 from ...tools.file_tools import LIST_FILES, READ_FILE, WRITE_FILE
 from ...tools.github_tools import COMMIT_FILES, CREATE_BRANCH, CREATE_PR
+from ...tools.soul_tools import GET_SOUL_CONTENT, PROPOSE_SOUL_UPDATE
 from ...tools.registry import ToolRegistry
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
@@ -24,7 +25,12 @@ router = APIRouter(prefix="/workflows", tags=["workflows"])
 
 def build_registry() -> ToolRegistry:
     registry = ToolRegistry()
-    for tool in [READ_FILE, WRITE_FILE, LIST_FILES, CREATE_BRANCH, COMMIT_FILES, CREATE_PR, GET_CONTEXT, SET_CONTEXT]:
+    for tool in [
+        READ_FILE, WRITE_FILE, LIST_FILES,
+        CREATE_BRANCH, COMMIT_FILES, CREATE_PR,
+        GET_CONTEXT, SET_CONTEXT,
+        GET_SOUL_CONTENT, PROPOSE_SOUL_UPDATE,
+    ]:
         registry.register(tool)
     return registry
 
