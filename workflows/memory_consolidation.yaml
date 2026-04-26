@@ -1,0 +1,45 @@
+version: "1.0"
+id: "memory-consolidation"
+name: "Memory Consolidation"
+description: "Agent reviews recent run outputs and updates its learnings file"
+
+phases:
+  - consolidate
+
+inputs:
+  agent_slug:
+    type: string
+    required: true
+
+guardrails:
+  max_cost_usd: 0.50
+  max_tokens: 30000
+
+triggers:
+  - type: manual
+
+tasks:
+  - id: consolidate
+    name: "Consolidate Learnings"
+    phase: consolidate
+    agent: "{{inputs.agent_slug}}"
+    depends_on: []
+    description: |
+      Review your existing learnings and recent work, then update your persistent memory.
+
+      Steps:
+      1. Call get_learnings to read your current accumulated knowledge
+      2. Call vector_search with a few queries relevant to your role to review recent
+         work patterns (e.g., "common errors", "effective patterns", "edge cases")
+      3. Identify 3-5 concrete, actionable lessons not already in your learnings
+      4. Call update_learnings with a Markdown section containing the new lessons
+
+      Format your learnings as numbered bullet points under a dated heading like:
+      ## [date] Lessons from Recent Runs
+      1. ...
+      2. ...
+
+      Focus on: patterns that improved outcomes, mistakes to avoid, and edge cases
+      discovered. Be specific and actionable — vague generalizations are not useful.
+
+      OUTPUT learnings_updated: true

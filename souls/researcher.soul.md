@@ -8,6 +8,8 @@ capabilities:
   - list_files
   - get_context
   - set_context
+  - get_learnings
+  - vector_search
 self_improvement:
   enabled: true
   allowed_fields: [instructions, memory_patterns]

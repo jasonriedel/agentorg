@@ -38,4 +38,8 @@ tasks:
       Your proposed changes must only modify the Markdown body — not the YAML
       frontmatter. When done, report what you proposed and why.
 
+      Before calling propose_soul_update, also call get_learnings to review your
+      accumulated knowledge and consider whether any learnings should be promoted
+      into your soul's core instructions.
+
       OUTPUT soul_pr_url: <the PR URL from propose_soul_update, or "no changes">

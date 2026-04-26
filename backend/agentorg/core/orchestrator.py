@@ -294,6 +294,16 @@ class Orchestrator:
                 db_task.completed_at = datetime.utcnow()
                 await db.commit()
 
+                # Index task output for cross-run memory search
+                from ..tools.search_tools import index_task_output
+                index_task_output(
+                    task_id=db_task.id,
+                    run_id=run.id,
+                    agent_slug=agent_slug,
+                    workflow_slug=run.workflow_slug,
+                    content=result.full_output,
+                )
+
                 await bus.emit(RunEvent(
                     run_id=run.id,
                     task_id=db_task.id,

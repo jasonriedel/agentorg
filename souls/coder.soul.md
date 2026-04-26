@@ -14,6 +14,9 @@ capabilities:
   - create_pr
   - get_soul_content
   - propose_soul_update
+  - get_learnings
+  - update_learnings
+  - vector_search
 self_improvement:
   enabled: true
   allowed_fields: [instructions, memory_patterns]

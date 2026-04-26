@@ -19,6 +19,7 @@ dependencies = [
     "pygithub>=2.3.0",
     "python-dotenv>=1.0.0",
     "apscheduler>=3.10.0",
+    "chromadb>=1.0.0",
 ]
 
 [project.optional-dependencies]
