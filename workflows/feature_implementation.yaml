@@ -1,0 +1,57 @@
+version: "1.0"
+id: "feature-implementation"
+name: "Feature Implementation"
+description: "Research the codebase, implement a feature, and open a PR"
+
+triggers:
+  - type: manual
+
+guardrails:
+  max_cost_usd: 5.00
+  max_tokens: 500000
+
+phases:
+  - plan
+  - execute
+
+inputs:
+  feature_description:
+    type: string
+    required: true
+    description: "What to build — be specific"
+  target_branch:
+    type: string
+    default: "main"
+
+tasks:
+  - id: research
+    name: "Research Codebase"
+    phase: plan
+    agent: researcher
+    description: >
+      Explore the repository structure and gather context relevant to the
+      feature described in the workflow inputs. Understand existing patterns,
+      relevant files, and any constraints before implementation begins.
+    depends_on: []
+    inputs:
+      feature_description: "{{inputs.feature_description}}"
+
+  - id: implement
+    name: "Implement Feature"
+    phase: execute
+    agent: coder
+    description: >
+      Implement the requested feature. Use the research summary and relevant
+      files from the previous task. Create a branch, write the code (with tests),
+      commit everything, and open a PR.
+    depends_on:
+      - research
+    inputs:
+      feature_description: "{{inputs.feature_description}}"
+      research_summary: "{{tasks.research.outputs.research_summary}}"
+      target_branch: "{{inputs.target_branch}}"
+    outputs:
+      - key: branch_name
+      - key: pr_url
+    after_pr:
+      action: human_review
