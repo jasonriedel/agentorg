@@ -15,6 +15,7 @@ from .api.v1 import workflows as workflows_router
 from .api.v1 import runs as runs_router
 from .api.v1 import gates as gates_router
 from .api.v1 import agents as agents_router
+from .api.v1 import sessions as sessions_router
 from .api.v1 import webhooks as webhooks_router
 from .api.ws import events as ws_events_router
 from .services.soul_sync_service import get_soul_sync_service
@@ -108,6 +109,7 @@ app.include_router(workflows_router.router, prefix="/api/v1")
 app.include_router(runs_router.router, prefix="/api/v1")
 app.include_router(gates_router.router, prefix="/api/v1")
 app.include_router(agents_router.router, prefix="/api/v1")
+app.include_router(sessions_router.router, prefix="/api/v1")
 app.include_router(webhooks_router.router)  # no prefix — /webhooks/github
 app.include_router(ws_events_router.router)  # WebSocket — no prefix
 

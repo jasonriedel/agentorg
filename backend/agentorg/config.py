@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     workflows_dir: str = "../workflows"
     default_model: str = "claude-sonnet-4-6"
     github_webhook_secret: str = ""  # optional; if set, validates HMAC-SHA256 signatures
+    claude_projects_dir: str = "~/.claude/projects"
 
 
 settings = Settings()

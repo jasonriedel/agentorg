@@ -1,4 +1,4 @@
-import type { Agent, Gate, Run, RunEvent, SoulVersion, Task, Workflow, WorkflowDetail } from "./types";
+import type { Agent, Gate, Run, RunEvent, SessionDetail, SessionSummary, SoulVersion, Task, Workflow, WorkflowDetail } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -32,6 +32,10 @@ export const api = {
     gates: (id: string) => get<Gate[]>(`/api/v1/runs/${id}/gates`),
     resolveGate: (runId: string, gateId: string, action: "approved" | "rejected", feedback?: string) =>
       post(`/api/v1/runs/${runId}/gates/${gateId}`, { action, feedback }),
+  },
+  sessions: {
+    list: (limit = 100) => get<SessionSummary[]>(`/api/v1/claude-sessions/?limit=${limit}`),
+    get: (id: string) => get<SessionDetail>(`/api/v1/claude-sessions/${id}`),
   },
   agents: {
     list: () => get<Agent[]>("/api/v1/agents/"),

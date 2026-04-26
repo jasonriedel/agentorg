@@ -1,5 +1,36 @@
 export type RunStatus = "pending" | "running" | "waiting_human" | "completed" | "failed" | "cancelled";
 
+export interface SessionSummary {
+  id: string;
+  project_dir: string;
+  project_path: string;
+  title: string;
+  cwd: string | null;
+  started_at: string | null;
+  last_active: string | null;
+  message_count: number;
+  agent_spawn_count: number;
+  first_message: string | null;
+}
+
+export interface SessionMessage {
+  role: "user" | "assistant" | "tool_use" | "agent_spawn";
+  content: string;
+  tool_name: string | null;
+  timestamp: string | null;
+}
+
+export interface AgentSpawn {
+  description: string;
+  subagent_type: string;
+}
+
+export interface SessionDetail extends SessionSummary {
+  agent_spawns: AgentSpawn[];
+  messages: SessionMessage[];
+  resume_command: string;
+}
+
 export interface Agent {
   id: string;
   slug: string;
